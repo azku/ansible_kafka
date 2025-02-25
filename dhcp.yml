@@ -1,0 +1,69 @@
+---
+- name: Install and Configure ISC DHCP Server
+  hosts: brokers
+  become: yes
+  vars:
+    # Network and IP range configuration
+    dhcp_network: "192.168.85.0/24"
+    dhcp_range_start: "192.168.85.20"
+    dhcp_range_end: "192.168.85.40"
+    dhcp_subnet_mask: "255.255.255.0"
+    dhcp_routers: "192.168.85.6"  # Change this as necessary for your network
+    dhcp_domain_name_servers: "8.8.8.8, 8.8.4.4"  # Use your DNS servers here
+
+  tasks:
+    - name: Install Kea
+      ansible.builtin.package:
+        name: 'kea-dhcp4-server'
+        state: 'latest'
+      register: _install_packages
+      until: _install_packages is succeeded
+      retries: 5
+      delay: 2
+      
+    - name: Create Kea DHCP configuration file
+      copy:
+        dest: /etc/kea/kea-dhcp4.conf
+        content: |
+          {
+            "Dhcp4":{
+              "interfaces-config": {
+                "interfaces": [
+                "enp3s0"
+                ]
+                },
+                "valid-lifetime": 28800,
+                "subnet4": [
+                {
+                "subnet": "192.168.85.0/24",
+                "pools": [
+                {
+                "pool": "192.168.85.20 - 192.168.85.40"
+                }
+                ],
+                }
+                ],
+                "loggers": [
+                {
+                "name": "kea-dhcp4",
+                "output_options": [
+                {
+                "output": "/tmp/kea-dhcp4.log",
+                "maxver": 10
+                }
+                ],
+                "severity": "INFO"
+                }
+                ]
+                }
+          }
+
+        owner: root
+        group: root
+        mode: '0644'
+
+    - name: Ensure Kea DHCP service is started and enabled
+      systemd:
+        name: kea-dhcp4-server
+        state: started
+        enabled: yes

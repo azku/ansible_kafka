@@ -1,0 +1,14 @@
+ - hosts:  consumers
+   become: True
+   become_user: root
+   vars:
+     netplan_remove_existing_configs: false
+     netplan_configuration_dir: '/etc/netplan/'
+     netplan_configuration_file: '3IA3.yaml'
+     netplan_ethernets:
+       - interface_name: 'enp3s0'
+         dhcp4: 'no'
+         addresses:
+            - '192.168.85.7/24'
+   roles:
+         - role: hifis.toolkit.netplan        

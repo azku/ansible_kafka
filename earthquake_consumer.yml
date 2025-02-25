@@ -1,0 +1,50 @@
+- name: Installing python packages for Kafka consumer
+  hosts: consumers
+  become: True
+  become_user: root
+  vars:
+    environment_path : /ir_inf/.venv
+    script_path : /ir_inf/scripts
+  tasks:
+    - name: Install Python3 and python3-venv (if not already installed)
+      ansible.builtin.apt:
+        name:
+          - python3
+          - python3-venv
+          - python3-pip  # Ensures pip is installed on the system
+        state: present
+        update_cache: yes
+    
+    - name: Create Python virtual environment
+      ansible.builtin.shell:
+        cmd: python3 -m venv "{{ environment_path }}"
+        creates: "{{ environment_path }}/bin/activate"
+      args:
+        executable: /bin/bash
+
+    - name: Install sseclient-py into the specified (virtualenv)
+      ansible.builtin.pip:
+        name="{{ item }}"
+        virtualenv="{{ environment_path }}"
+      with_items:
+        - kafka-python
+        - requests
+        - psycopg[binary,pool]
+
+    - name: Create Netplan configuration for enp3s0 interface with DHCP
+      copy:
+        dest: "/etc/netplan/00-dhcp-config.yaml"
+        content: |
+          network:
+            version: 2
+            renderer: networkd
+            ethernets:
+              enp3s0:
+                dhcp4: true
+        owner: root
+        group: root
+        mode: '0600'
+
+    - name: Apply Netplan configuration
+      command: netplan apply
+      become: true

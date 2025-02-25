@@ -1,0 +1,10 @@
+[Unit]
+Description=Earthquake Kafka producer
+After=network.target
+ 
+[Service]
+Type=simple
+ExecStart=/opt/.venv/bin/python /opt/scripts/earthquake_producer.py --serve-in-foreground
+ 
+[Install]
+WantedBy=multi-user.target

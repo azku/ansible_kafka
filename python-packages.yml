@@ -1,0 +1,63 @@
+---
+- name: Installing python packages for Kafka broker and producer
+  hosts: brokers
+  become: True
+  become_user: root
+  vars:
+    environment_path : /opt/.venv
+    script_path : /opt/scripts
+  tasks:
+    - name: Install Python3 and python3-venv (if not already installed)
+      ansible.builtin.apt:
+        name:
+          - python3
+          - python3-venv
+          - python3-pip  # Ensures pip is installed on the system
+        state: present
+        update_cache: yes
+    
+    - name: Create Python virtual environment
+      ansible.builtin.shell:
+        cmd: python3 -m venv "{{ environment_path }}"
+        creates: "{{ environment_path }}/bin/activate"
+      args:
+        executable: /bin/bash
+
+    - name: Install sseclient-py into the specified (virtualenv)
+      ansible.builtin.pip:
+        name="{{ item }}"
+        virtualenv="{{ environment_path }}"
+      with_items:
+        - kafka-python
+        - requests
+
+    - name: Create a directory if it does not exist
+      ansible.builtin.file:
+        path: "{{ script_path }}"
+        state: directory
+        owner: kafka
+        group: kafka
+        mode: '0755'
+
+    - name: Copy earthquake producer
+      template:
+        src: templates/earthquake_producer.py
+        dest: "{{ script_path }}"
+        owner: kafka
+        group: kafka
+        mode: 0600
+
+    - name: Copy earthquake service
+      template:
+        src: templates/earthquake_producer_service.j2
+        dest: /etc/systemd/system/earthquake_producer.service
+        owner: root
+        group: root
+        mode: 0600
+        
+    - name: configure systemd to use service
+      systemd:
+        daemon_reload: yes
+        enabled: yes
+        state: started
+        name: earthquake_producer.service
