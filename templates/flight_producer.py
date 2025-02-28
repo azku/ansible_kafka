@@ -17,6 +17,6 @@ def send_flight_data():
     while True:
         data = fetch_flight_data()
         producer.send('flight_data_topic', value=data)
-        time.sleep(10)  # Send data every 10 seconds
+        time.sleep(100)  # Send data every 10 seconds
 
 send_flight_data()

@@ -4,7 +4,7 @@ import json
 import time
 
 # Set Kafka Producer
-producer = KafkaProducer(bootstrap_servers='localhost:9092', value_serializer=lambda x: json.dumps(x).encode('utf-8'))
+producer = KafkaProducer(bootstrap_servers='192.168.85.7:9092', value_serializer=lambda x: json.dumps(x).encode('utf-8'))
 
 # USGS Earthquake API endpoint
 url = 'https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/2.5_day.geojson'
